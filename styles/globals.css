@@ -118,9 +118,10 @@ a {
 }
 
 .video-stream {
-  width: 200px;
-  height: 160px;
+  width: 400px;
+  height: 320px;
   background: white;
+  position: relative;
 }
 
 .chat-panel {
