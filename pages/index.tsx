@@ -169,6 +169,7 @@ export default function Home() {
           // setWhoMoved('another');
         }
         if (themUser) {
+          playSound();
           const remoteVideoTrack =
             themUser.videoTrack as IExtendedRemoteVideoTrack;
           themUsers = themUser;
@@ -190,6 +191,7 @@ export default function Home() {
     ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
     if (themUsers) {
+      playSound();
       setTimeout(() => {
         detectMotion(cameraTrack, true);
         setWhoMoved('you');
