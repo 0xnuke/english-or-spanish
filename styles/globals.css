@@ -132,3 +132,14 @@ a {
   display: flex;
   justify-content: space-between;
 }
+
+.egg-button {
+  width: 30px;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.egg-button:hover {
+  transform: scale(1.2);
+}

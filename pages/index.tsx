@@ -12,6 +12,7 @@ import ricardo from '../public/ricardo.png';
 import Image from 'next/image';
 import img from "../public/bg-1.png"
 import html2canvas from "html2canvas";
+import egg from "../public/egg.png";
 
 
 type TCreateRoomResponse = {
@@ -130,6 +131,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [imageSrc, setImageSrc] = useState('');
+  const [imageSrc2, setImageSrc2] = useState('');
 
   const isMoved = useRef(false);
   const isSnap = useRef(false);
@@ -214,7 +216,10 @@ export default function Home() {
     const videoConrainerId = document.getElementById(
       "video-container-1"
     );
-    if(videoConrainerId && isSnap.current === false){
+    const videoConrainerId2 = document.getElementById(
+      "video-container-2"
+    );
+    if(videoConrainerId && videoConrainerId2 && isSnap.current === false){
     html2canvas(videoConrainerId, {
       width: 400,
       height: 320,
@@ -222,6 +227,14 @@ export default function Home() {
       const imageURL = canvas.toDataURL('image/jpeg', 1.0);
       console.log("img logger");
       setImageSrc(imageURL);
+    });
+    html2canvas(videoConrainerId2, {
+      width: 400,
+      height: 320,
+    }).then((canvas) => {        
+      const imageURL2 = canvas.toDataURL('image/jpeg', 1.0);
+      console.log("img logger");
+      setImageSrc2(imageURL2);
     });
     }
     isSnap.current = true;
@@ -367,7 +380,8 @@ export default function Home() {
         {isChatting ? (
           <>
             {room._id}
-            {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
+            {/* {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "100%"}}/>}
+            {imageSrc2 && <img src={imageSrc2} style={{ width: "100%", height: "100%"}}/>} */}
             <button onClick={handleNextClick}>next</button>
             <div className='chat-window'>
               <div className='video-panel'>
@@ -379,16 +393,16 @@ export default function Home() {
                       videoTrack={myVideo}
                       />
                       )}
-                    {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
+                    {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"   style={{position: "absolute", zIndex: 100, width: "100%", height: "100%"}}/>}
               </div>
-              <div className="video-stream">
+              <div className="video-stream" id="video-container-2">
                   {themVideo && (
                     <VideoPlayer
                       style={{ width: "100%", height: "100%", position: "absolute" }}
                       videoTrack={themVideo}
                     />
                     )}
-                    {isMoved.current && whoMoved === "another" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
+                    {isMoved.current && whoMoved === "another" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "100%"}}/>}
                 </div>
               </div>
 
@@ -409,27 +423,12 @@ export default function Home() {
                   <button>submit</button>
                 </form>
               </div>
-              <div>
-                <button onClick={clearIsDetected}>clear</button>
-                <button onClick={() => console.log(isSnap)}>logger</button>
-                <button onClick={playSound}>Boop!</button>
-                <button onClick={()=> console.log("logger",isSnap,imageSrc)}>img logger</button>
-                <audio
-                  ref={audioRef}
-                  controls
-                  style={{ display: 'none' }}
-                  src='./steve-lacy-staic.mp3'
-                >
-                  Your browser does not support the
-                  <code>audio</code> element.
-                </audio>
-              </div>
             </div>
           </>
         ) : (
-          <>
-            <button onClick={handleStartChattingClicked}>Start Chatting</button>
-          </>
+          <div>
+            <Image src={egg} onClick={handleStartChattingClicked} className='egg-button' />
+          </div>
         )}
       </main>
     </>

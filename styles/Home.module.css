@@ -5,7 +5,9 @@
   align-items: center;
   padding: 6rem;
   min-height: 100vh;
+  background-image: url("../public/windown-bg.jpeg");
 }
+
 
 .description {
   display: inherit;
