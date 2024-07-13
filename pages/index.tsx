@@ -8,11 +8,9 @@ import {
   IAgoraRTCClient,
   IRemoteAudioTrack,
 } from 'agora-rtc-sdk-ng';
-import ricardo from '../public/ricardo.png';
 import Image from 'next/image';
-import img from "../public/bg-1.png"
-import html2canvas from "html2canvas";
-
+import img from '../public/bg-1.png';
+import html2canvas from 'html2canvas';
 
 type TCreateRoomResponse = {
   room: Room;
@@ -111,6 +109,7 @@ async function connectToAgoraRtm(
       message: message.text,
     });
   });
+  // playSound();
 
   return {
     channel,
@@ -135,6 +134,10 @@ export default function Home() {
   const channelRef = useRef<RtmChannel>();
   const rtcClientRef = useRef<IAgoraRTCClient>();
 
+  useEffect(() => {
+    playSound();
+  }, [themVideo]);
+
   async function connectToAgoraRtc(
     roomId: string,
     userId: string,
@@ -156,6 +159,7 @@ export default function Home() {
       token,
       userId
     );
+    let themUsers;
 
     client.on('user-published', (themUser, mediaType) => {
       client.subscribe(themUser, mediaType).then(() => {
@@ -163,8 +167,13 @@ export default function Home() {
           const remoteVideoTrack =
             themUser.videoTrack as IExtendedRemoteVideoTrack;
           onVideoConnect(remoteVideoTrack);
-          detectMotion(remoteVideoTrack, false);
-          setWhoMoved('another');
+          if (themUser) {
+            themUsers = themUser;
+            setTimeout(() => {
+              detectMotion(remoteVideoTrack, false);
+              setWhoMoved('another');
+            }, 10); // Start detectMotion after 2 seconds
+          }
         }
         if (mediaType === 'audio') {
           onAudioConnect(themUser.audioTrack);
@@ -178,8 +187,13 @@ export default function Home() {
       (track) => track.trackMediaType === 'video'
     ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
-    detectMotion(cameraTrack, true);
-    setWhoMoved('you');
+    if (themUsers) {
+      setTimeout(() => {
+        detectMotion(cameraTrack, true);
+        setWhoMoved('you');
+      }, 10); // Start detectMotion after 2 seconds
+    }
+
     await client.publish(tracks);
 
     return { tracks, client };
@@ -244,7 +258,7 @@ export default function Home() {
           // Motion threshold
           isMoved.current = true;
           setIsDetected(true);
-          playSound();
+          // playSound();
         }
       }
       lastImageData = imageData;
@@ -256,18 +270,16 @@ export default function Home() {
   }
 
   function getImage() {
-    const videoConrainerId = document.getElementById(
-      "video-container-1"
-    );
-    if(videoConrainerId){
-    html2canvas(videoConrainerId, {
-      width: 400,
-      height: 320,
-    }).then((canvas) => {        
-      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
-      console.log("img logger");
-      setImageSrc(imageURL);
-    });
+    const videoConrainerId = document.getElementById('video-container-1');
+    if (videoConrainerId) {
+      html2canvas(videoConrainerId, {
+        width: 400,
+        height: 320,
+      }).then((canvas) => {
+        const imageURL = canvas.toDataURL('image/jpeg', 1.0);
+        console.log('img logger');
+        setImageSrc(imageURL);
+      });
     }
   }
 
@@ -299,6 +311,7 @@ export default function Home() {
         (message: TMessage) => setMessages((cur) => [...cur, message]),
         rtmToken
       );
+
       channelRef.current = channel;
 
       const { tracks, client } = await connectToAgoraRtc(
@@ -367,24 +380,57 @@ export default function Home() {
             <button onClick={handleNextClick}>next</button>
             <div className='chat-window'>
               <div className='video-panel'>
-              <div className="video-stream" id="video-container-1">
-                    
-                    {myVideo && (
-                      <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+                <div className='video-stream' id='video-container-1'>
+                  {myVideo && (
+                    <VideoPlayer
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={myVideo}
-                      />
-                      )}
-                    {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
-                  </div>
-                <div className="video-stream">
+                    />
+                  )}
+                  {isMoved.current && whoMoved === 'you' && (
+                    <Image
+                      src={img}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '100%',
+                        height: 'auto',
+                        top: 0,
+                        left: 0,
+                      }}
+                    />
+                  )}
+                </div>
+                <div className='video-stream'>
                   {themVideo && (
                     <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={themVideo}
                     />
-                    )}
-                    {isMoved.current && whoMoved === "another" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
+                  )}
+                  {isMoved.current && whoMoved === 'another' && (
+                    <Image
+                      src={img}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '100%',
+                        height: 'auto',
+                        top: 0,
+                        left: 0,
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -402,7 +448,12 @@ export default function Home() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   ></input>
-                  {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
+                  {imageSrc && (
+                    <img
+                      src={imageSrc}
+                      style={{ width: '100%', height: 'auto' }}
+                    />
+                  )}
                   <button>submit</button>
                 </form>
               </div>
@@ -411,7 +462,9 @@ export default function Home() {
                 <button onClick={clearIsDetected}>clear</button>
                 <button onClick={() => console.log(isMoved)}>logger</button>
                 <button onClick={playSound}>Boop!</button>
-                <button onClick={()=> console.log("logger",imageSrc)}>img logger</button>
+                <button onClick={() => console.log('logger', imageSrc)}>
+                  img logger
+                </button>
                 <audio
                   ref={audioRef}
                   controls
