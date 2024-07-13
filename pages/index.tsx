@@ -173,6 +173,7 @@ export default function Home() {
           const remoteVideoTrack =
             themUser.videoTrack as IExtendedRemoteVideoTrack;
           themUsers = themUser;
+          onVideoConnect(remoteVideoTrack);
           setTimeout(() => {
             detectMotion(remoteVideoTrack, false);
             setWhoMoved('another');
