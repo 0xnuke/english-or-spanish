@@ -132,6 +132,7 @@ export default function Home() {
   const [imageSrc, setImageSrc] = useState('');
 
   const isMoved = useRef(false);
+  const isSnap = useRef(false);
   const channelRef = useRef<RtmChannel>();
   const rtcClientRef = useRef<IAgoraRTCClient>();
 
@@ -208,6 +209,24 @@ export default function Home() {
     setInput('');
   }
 
+  function getImage() {
+    console.log("getting image");
+    const videoConrainerId = document.getElementById(
+      "video-container-1"
+    );
+    if(videoConrainerId && isSnap.current === false){
+    html2canvas(videoConrainerId, {
+      width: 400,
+      height: 320,
+    }).then((canvas) => {        
+      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
+      console.log("img logger");
+      setImageSrc(imageURL);
+    });
+    }
+    isSnap.current = true;
+  }
+
   function detectMotion(
     videoTrack: IExtendedRemoteVideoTrack | IExtendedCameraVideoTrack,
     isLocal: boolean
@@ -245,6 +264,7 @@ export default function Home() {
           isMoved.current = true;
           setIsDetected(true);
           playSound();
+          isSnap.current === false && (setInterval(getImage, 50));
         }
       }
       lastImageData = imageData;
@@ -252,23 +272,6 @@ export default function Home() {
 
     // Check for motion every second
     setInterval(checkForMotion, 2000);
-    setInterval(getImage, 5000);
-  }
-
-  function getImage() {
-    const videoConrainerId = document.getElementById(
-      "video-container-1"
-    );
-    if(videoConrainerId){
-    html2canvas(videoConrainerId, {
-      width: 400,
-      height: 320,
-    }).then((canvas) => {        
-      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
-      console.log("img logger");
-      setImageSrc(imageURL);
-    });
-    }
   }
 
   async function connectToARoom() {
@@ -364,6 +367,7 @@ export default function Home() {
         {isChatting ? (
           <>
             {room._id}
+            {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
             <button onClick={handleNextClick}>next</button>
             <div className='chat-window'>
               <div className='video-panel'>
@@ -376,8 +380,8 @@ export default function Home() {
                       />
                       )}
                     {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
-                  </div>
-                <div className="video-stream">
+              </div>
+              <div className="video-stream">
                   {themVideo && (
                     <VideoPlayer
                       style={{ width: "100%", height: "100%", position: "absolute" }}
@@ -402,16 +406,14 @@ export default function Home() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   ></input>
-                  {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
                   <button>submit</button>
                 </form>
               </div>
-
               <div>
                 <button onClick={clearIsDetected}>clear</button>
-                <button onClick={() => console.log(isMoved)}>logger</button>
+                <button onClick={() => console.log(isSnap)}>logger</button>
                 <button onClick={playSound}>Boop!</button>
-                <button onClick={()=> console.log("logger",imageSrc)}>img logger</button>
+                <button onClick={()=> console.log("logger",isSnap,imageSrc)}>img logger</button>
                 <audio
                   ref={audioRef}
                   controls
