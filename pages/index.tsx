@@ -389,7 +389,13 @@ export default function Home() {
             {room._id}
             {/* {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "100%"}}/>}
             {imageSrc2 && <img src={imageSrc2} style={{ width: "100%", height: "100%"}}/>} */}
-            <button onClick={handleNextClick}>next</button>
+          <div>
+            <Image
+              src={egg}
+              onClick={handleNextClick}
+              className='egg-button'
+            />
+          </div>
             <div className='chat-window'>
               <div className='video-panel'>
                 <div className='video-stream' id='video-container-1'>
