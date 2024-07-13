@@ -1,18 +1,15 @@
-import Head from "next/head";
-import React, { useEffect, useRef, useState } from "react";
-import styles from "../styles/Home.module.css";
-import { RtmChannel } from "agora-rtm-sdk";
+import Head from 'next/head';
+import React, { useEffect, useRef, useState } from 'react';
+import styles from '../styles/Home.module.css';
+import { RtmChannel } from 'agora-rtm-sdk';
 import {
   ICameraVideoTrack,
   IRemoteVideoTrack,
   IAgoraRTCClient,
   IRemoteAudioTrack,
-} from "agora-rtc-sdk-ng";
-import sound from '../asset/steve-lacy-staic.mp3'
-import ricardo from "../public/ricardo.png"
+} from 'agora-rtc-sdk-ng';
+import ricardo from '../public/ricardo.png';
 import Image from 'next/image';
-import useSound from "use-sound";
-
 
 type TCreateRoomResponse = {
   room: Room;
@@ -46,7 +43,7 @@ interface IExtendedCameraVideoTrack extends ICameraVideoTrack {
 
 function createRoom(userId: string): Promise<TCreateRoomResponse> {
   return fetch(`/api/rooms?userId=${userId}`, {
-    method: "POST",
+    method: 'POST',
   }).then((response) => response.json());
 }
 
@@ -57,7 +54,7 @@ function getRandomRoom(userId: string): Promise<TGetRandomRoomResponse> {
 }
 
 function setRoomToWaiting(roomId: string) {
-  return fetch(`/api/rooms/${roomId}`, { method: "PUT" }).then((response) =>
+  return fetch(`/api/rooms/${roomId}`, { method: 'PUT' }).then((response) =>
     response.json()
   );
 }
@@ -79,7 +76,9 @@ export const VideoPlayer = ({
     videoTrack.play(playerRef);
 
     // Add getElement method to videoTrack
-    (videoTrack as IExtendedRemoteVideoTrack | IExtendedCameraVideoTrack).getElement = () => playerRef?.querySelector('video') as HTMLVideoElement;
+    (
+      videoTrack as IExtendedRemoteVideoTrack | IExtendedCameraVideoTrack
+    ).getElement = () => playerRef?.querySelector('video') as HTMLVideoElement;
 
     return () => {
       videoTrack.stop();
@@ -89,15 +88,13 @@ export const VideoPlayer = ({
   return <div ref={ref} style={style}></div>;
 };
 
-
-
 async function connectToAgoraRtm(
   roomId: string,
   userId: string,
   onMessage: (message: TMessage) => void,
   token: string
 ) {
-  const { default: AgoraRTM } = await import("agora-rtm-sdk");
+  const { default: AgoraRTM } = await import('agora-rtm-sdk');
   const client = AgoraRTM.createInstance(process.env.NEXT_PUBLIC_AGORA_APP_ID!);
   await client.login({
     uid: userId,
@@ -105,7 +102,7 @@ async function connectToAgoraRtm(
   });
   const channel = await client.createChannel(roomId);
   await channel.join();
-  channel.on("ChannelMessage", (message, userId) => {
+  channel.on('ChannelMessage', (message, userId) => {
     onMessage({
       userId,
       message: message.text,
@@ -118,20 +115,21 @@ async function connectToAgoraRtm(
 }
 
 export default function Home() {
-  const [userId] = useState(parseInt(`${Math.random() * 1e6}`) + "");
+  const [userId] = useState(parseInt(`${Math.random() * 1e6}`) + '');
   const [room, setRoom] = useState<Room | undefined>();
   const [messages, setMessages] = useState<TMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [themVideo, setThemVideo] = useState<IRemoteVideoTrack>();
   const [myVideo, setMyVideo] = useState<ICameraVideoTrack>();
   const [themAudio, setThemAudio] = useState<IRemoteAudioTrack>();
-  const [isDetected, setIsDetected] = useState(false)
-  const channelRef = useRef<RtmChannel>();
-  const rtcClientRef = useRef<IAgoraRTCClient>();
-  const [whoMoved, setWhoMoved] = useState("")
-  const [play] = useSound(sound)
+  const [isDetected, setIsDetected] = useState(false);
+  const [whoMoved, setWhoMoved] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const isMoved = useRef(false);
+  const channelRef = useRef<RtmChannel>();
+  const rtcClientRef = useRef<IAgoraRTCClient>();
 
   async function connectToAgoraRtc(
     roomId: string,
@@ -141,42 +139,45 @@ export default function Home() {
     onAudioConnect: (audioTrack: IRemoteAudioTrack) => void,
     token: string
   ) {
-    const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
-  
+    const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
+
     const client = AgoraRTC.createClient({
-      mode: "rtc",
-      codec: "vp8",
+      mode: 'rtc',
+      codec: 'vp8',
     });
-  
+
     await client.join(
       process.env.NEXT_PUBLIC_AGORA_APP_ID!,
       roomId,
       token,
       userId
     );
-  
-    client.on("user-published", (themUser, mediaType) => {
+
+    client.on('user-published', (themUser, mediaType) => {
       client.subscribe(themUser, mediaType).then(() => {
-        if (mediaType === "video") {
-          const remoteVideoTrack = themUser.videoTrack as IExtendedRemoteVideoTrack;
+        if (mediaType === 'video') {
+          const remoteVideoTrack =
+            themUser.videoTrack as IExtendedRemoteVideoTrack;
           onVideoConnect(remoteVideoTrack);
           detectMotion(remoteVideoTrack, false);
-          setWhoMoved("another")
+          setWhoMoved('another');
         }
-        if (mediaType === "audio") {
+        if (mediaType === 'audio') {
           onAudioConnect(themUser.audioTrack);
           themUser.audioTrack?.play();
         }
       });
     });
-  
+
     const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-    const cameraTrack = tracks.find(track => track.trackMediaType === 'video') as IExtendedCameraVideoTrack;
+    const cameraTrack = tracks.find(
+      (track) => track.trackMediaType === 'video'
+    ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
     detectMotion(cameraTrack, true);
-    setWhoMoved("you")
+    setWhoMoved('you');
     await client.publish(tracks);
-  
+
     return { tracks, client };
   }
 
@@ -200,55 +201,51 @@ export default function Home() {
         message: input,
       },
     ]);
-    setInput("");
+    setInput('');
   }
 
   function detectMotion(
     videoTrack: IExtendedRemoteVideoTrack | IExtendedCameraVideoTrack,
-    isLocal: boolean,
-    // callback: () => void
+    isLocal: boolean
   ) {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-  
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
     if (!context) {
       console.error('Failed to get canvas context');
       return;
     }
-  
+
     const width = 649;
     const height = 480;
     canvas.width = width;
     canvas.height = height;
     let lastImageData: ImageData | null = null;
-  
+
     function checkForMotion() {
       if (!videoTrack || !videoTrack.getElement) return;
-  
+
       const element = videoTrack.getElement();
       if (!element || !(element instanceof HTMLVideoElement)) {
         console.error('Expected HTMLVideoElement, got:', element);
         return;
       }
-  
+
       context.drawImage(element, 0, 0, width, height);
       const imageData = context.getImageData(0, 0, width, height);
-  
+
       if (lastImageData) {
         const diff = getFrameDifference(imageData.data, lastImageData.data);
-        if (!isMoved.current && diff > 7718920) { // Motion threshold
+        if (!isMoved.current && diff > 7718920) {
+          // Motion threshold
           isMoved.current = true;
-          setIsDetected(true)
-          // if (isLocal) {
-          //   alert(`You moved`);
-          // } else {
-          //   alert(`User moved`);
-          // }
+          setIsDetected(true);
+          playSound();
         }
       }
       lastImageData = imageData;
     }
-  
+
     // Check for motion every second
     setInterval(checkForMotion, 2000);
   }
@@ -316,23 +313,30 @@ export default function Home() {
   }
 
   function convertToYouThem(message: TMessage) {
-    return message.userId === userId ? "You" : "Them";
+    return message.userId === userId ? 'You' : 'Them';
   }
-
   const isChatting = room!!;
 
-  function clearIsDetected(){
-    isMoved.current = false
-    console.log("wascall logger", isMoved)
+  function playSound() {
+    if (audioRef.current) {
+      setIsPlaying(true);
+      audioRef.current.play();
+    }
+  }
+
+  function clearIsDetected() {
+    isMoved.current = false;
+    setIsPlaying(false);
+    console.log('wascall logger', isMoved);
   }
 
   return (
     <>
       <Head>
         <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <meta name='description' content='Generated by create next app' />
+        <meta name='viewport' content='width=device-width, initial-scale=1' />
+        <link rel='icon' href='/favicon.ico' />
       </Head>
 
       <main className={styles.main}>
@@ -340,30 +344,63 @@ export default function Home() {
           <>
             {room._id}
             <button onClick={handleNextClick}>next</button>
-            <div className="chat-window">
-              <div className="video-panel">
-                  <div className="video-stream">
-                    
-                    {myVideo && (
-                      <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+            <div className='chat-window'>
+              <div className='video-panel'>
+                <div className='video-stream'>
+                  {myVideo && (
+                    <VideoPlayer
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={myVideo}
-                      />
-                      )}
-                    {isMoved.current && whoMoved === "you" && <Image src={ricardo} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "50%", height: "auto", right: 0, bottom: 0}}/>}
-                  </div>
-                <div className="video-stream">
+                    />
+                  )}
+                  {isMoved.current && whoMoved === 'you' && (
+                    <Image
+                      src={ricardo}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '50%',
+                        height: 'auto',
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    />
+                  )}
+                </div>
+                <div className='video-stream'>
                   {themVideo && (
                     <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={themVideo}
                     />
-                    )}
-                    {isMoved.current && whoMoved === "another" && <Image src={ricardo} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "50%", height: "auto", right: 0, bottom: 0}}/>}
+                  )}
+                  {isMoved.current && whoMoved === 'another' && (
+                    <Image
+                      src={ricardo}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '50%',
+                        height: 'auto',
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
-              <div className="chat-panel">
+              <div className='chat-panel'>
                 <ul>
                   {messages.map((message, idx) => (
                     <li key={idx}>
@@ -371,7 +408,7 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                
+
                 <form onSubmit={handleSubmitMessage}>
                   <input
                     value={input}
@@ -381,11 +418,19 @@ export default function Home() {
                 </form>
               </div>
 
-
-              <div>              
-              <button onClick={clearIsDetected}>clear</button>
-              <button onClick={()=>console.log(isMoved)}>logger</button>
-              <button onClick={()=>play()}>Boop!</button>
+              <div>
+                <button onClick={clearIsDetected}>clear</button>
+                <button onClick={() => console.log(isMoved)}>logger</button>
+                <button onClick={playSound}>Boop!</button>
+                <audio
+                  ref={audioRef}
+                  controls
+                  style={{ display: 'none' }}
+                  src='./steve-lacy-staic.mp3'
+                >
+                  Your browser does not support the
+                  <code>audio</code> element.
+                </audio>
               </div>
             </div>
           </>
@@ -399,14 +444,16 @@ export default function Home() {
   );
 }
 
-
-
-function getFrameDifference(data1: Uint8ClampedArray, data2: Uint8ClampedArray) {
+function getFrameDifference(
+  data1: Uint8ClampedArray,
+  data2: Uint8ClampedArray
+) {
   let diff = 0;
   for (let i = 0; i < data1.length; i += 4) {
-    diff += Math.abs(data1[i] - data2[i]) +
-            Math.abs(data1[i + 1] - data2[i + 1]) +
-            Math.abs(data1[i + 2] - data2[i + 2]);
+    diff +=
+      Math.abs(data1[i] - data2[i]) +
+      Math.abs(data1[i + 1] - data2[i + 1]) +
+      Math.abs(data1[i + 2] - data2[i + 2]);
   }
   return diff;
 }
