@@ -162,9 +162,9 @@ export default function Home() {
     client.on('user-published', (themUser, mediaType) => {
       client.subscribe(themUser, mediaType).then(() => {
         if (mediaType === 'video') {
-          const remoteVideoTrack =
-            themUser.videoTrack as IExtendedRemoteVideoTrack;
-          onVideoConnect(remoteVideoTrack);
+          // const remoteVideoTrack =
+          //   themUser.videoTrack as IExtendedRemoteVideoTrack;
+          // onVideoConnect(remoteVideoTrack);
           // detectMotion(remoteVideoTrack, false);
           // setWhoMoved('another');
         }
