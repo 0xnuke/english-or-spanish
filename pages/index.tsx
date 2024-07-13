@@ -173,7 +173,7 @@ export default function Home() {
             setTimeout(() => {
               detectMotion(remoteVideoTrack, false, "another");
               setWhoMoved('another');
-            }, 10); // Start detectMotion after 2 seconds
+            }, 2000); // Start detectMotion after 2 seconds
           }
         }
         if (mediaType === 'audio') {
@@ -188,11 +188,11 @@ export default function Home() {
       (track) => track.trackMediaType === 'video'
     ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
-    if (themUsers && whoMoved !== "another") {
+    if (themUsers) {
       setTimeout(() => {
         detectMotion(cameraTrack, true, "you");
         setWhoMoved("you");
-      }, 10); // Start detectMotion after 2 seconds
+      }, 2000); // Start detectMotion after 2 seconds
     }
 
     await client.publish(tracks);
