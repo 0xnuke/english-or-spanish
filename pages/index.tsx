@@ -12,6 +12,8 @@ import sound from '../asset/steve-lacy-staic.mp3'
 import ricardo from "../public/ricardo.png"
 import Image from 'next/image';
 import useSound from "use-sound";
+import img from "../public/bg-1.png"
+import html2canvas from "html2canvas";
 
 
 type TCreateRoomResponse = {
@@ -130,8 +132,18 @@ export default function Home() {
   const rtcClientRef = useRef<IAgoraRTCClient>();
   const [whoMoved, setWhoMoved] = useState("")
   const [play] = useSound(sound)
+  const [imageSrc, setImageSrc] = useState("");
 
   const isMoved = useRef(false);
+  const audioRef = useRef(null);
+
+  const playAudio = () => {
+    audioRef.current.play();
+  };
+
+  const pauseAudio = () => {
+    audioRef.current.pause();
+  };
 
   async function connectToAgoraRtc(
     roomId: string,
@@ -208,6 +220,8 @@ export default function Home() {
     isLocal: boolean,
     // callback: () => void
   ) {
+
+    let count = 0;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
   
@@ -239,6 +253,8 @@ export default function Home() {
         if (!isMoved.current && diff > 7718920) { // Motion threshold
           isMoved.current = true;
           setIsDetected(true)
+          count = 1
+
           // if (isLocal) {
           //   alert(`You moved`);
           // } else {
@@ -251,6 +267,28 @@ export default function Home() {
   
     // Check for motion every second
     setInterval(checkForMotion, 2000);
+    console.log("ref logger", isMoved)
+    if(count === 1 ){
+
+      console.log("count logger")
+      setInterval(getImage, 5000);
+    }
+  }
+
+  function getImage() {
+    const videoConrainerId = document.getElementById(
+      "video-container-1"
+    );
+    if(videoConrainerId){
+    html2canvas(videoConrainerId, {
+      width: 400,
+      height: 320,
+    }).then((canvas) => {        
+      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
+      console.log("img logger");
+      setImageSrc(imageURL);
+    });
+    }
   }
 
   async function connectToARoom() {
@@ -326,6 +364,8 @@ export default function Home() {
     console.log("wascall logger", isMoved)
   }
 
+  
+
   return (
     <>
       <Head>
@@ -342,7 +382,7 @@ export default function Home() {
             <button onClick={handleNextClick}>next</button>
             <div className="chat-window">
               <div className="video-panel">
-                  <div className="video-stream">
+                  <div className="video-stream" id="video-container-1">
                     
                     {myVideo && (
                       <VideoPlayer
@@ -350,7 +390,7 @@ export default function Home() {
                       videoTrack={myVideo}
                       />
                       )}
-                    {isMoved.current && whoMoved === "you" && <Image src={ricardo} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "50%", height: "auto", right: 0, bottom: 0}}/>}
+                    {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
                   </div>
                 <div className="video-stream">
                   {themVideo && (
@@ -359,7 +399,7 @@ export default function Home() {
                       videoTrack={themVideo}
                     />
                     )}
-                    {isMoved.current && whoMoved === "another" && <Image src={ricardo} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "50%", height: "auto", right: 0, bottom: 0}}/>}
+                    {isMoved.current && whoMoved === "another" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "auto", top: 0,left: 0}}/>}
                 </div>
               </div>
 
@@ -377,15 +417,17 @@ export default function Home() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   ></input>
+                                  {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
+
                   <button>submit</button>
                 </form>
               </div>
 
-
-              <div>              
-              <button onClick={clearIsDetected}>clear</button>
-              <button onClick={()=>console.log(isMoved)}>logger</button>
-              <button onClick={()=>play()}>Boop!</button>
+              <div>
+                <button onClick={()=>console.log(imageSrc, whoMoved)}>image logger</button>
+                <button onClick={clearIsDetected}>clear</button>
+                <button onClick={()=>console.log(isMoved)}>logger</button>
+                <button onClick={()=>play()}>Boop!</button>
               </div>
             </div>
           </>
