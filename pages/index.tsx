@@ -169,6 +169,8 @@ export default function Home() {
           // setWhoMoved('another');
         }
         if (themUser) {
+          const remoteVideoTrack =
+            themUser.videoTrack as IExtendedRemoteVideoTrack;
           themUsers = themUser;
           setTimeout(() => {
             detectMotion(remoteVideoTrack, false);
@@ -389,13 +391,13 @@ export default function Home() {
             {room._id}
             {/* {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "100%"}}/>}
             {imageSrc2 && <img src={imageSrc2} style={{ width: "100%", height: "100%"}}/>} */}
-          <div>
-            <Image
-              src={egg}
-              onClick={handleNextClick}
-              className='egg-button'
-            />
-          </div>
+            <div>
+              <Image
+                src={egg}
+                onClick={handleNextClick}
+                className='egg-button'
+              />
+            </div>
             <div className='chat-window'>
               <div className='video-panel'>
                 <div className='video-stream' id='video-container-1'>
