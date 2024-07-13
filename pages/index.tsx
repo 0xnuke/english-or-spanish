@@ -10,10 +10,9 @@ import {
 } from 'agora-rtc-sdk-ng';
 import ricardo from '../public/ricardo.png';
 import Image from 'next/image';
-import img from "../public/bg-1.png"
-import html2canvas from "html2canvas";
-import egg from "../public/egg.png";
-
+import img from '../public/bg-1.png';
+import html2canvas from 'html2canvas';
+import egg from '../public/egg.png';
 
 type TCreateRoomResponse = {
   room: Room;
@@ -152,7 +151,7 @@ export default function Home() {
       mode: 'rtc',
       codec: 'vp8',
     });
-
+    let themUsers;
     await client.join(
       process.env.NEXT_PUBLIC_AGORA_APP_ID!,
       roomId,
@@ -166,8 +165,15 @@ export default function Home() {
           const remoteVideoTrack =
             themUser.videoTrack as IExtendedRemoteVideoTrack;
           onVideoConnect(remoteVideoTrack);
-          detectMotion(remoteVideoTrack, false);
-          setWhoMoved('another');
+          // detectMotion(remoteVideoTrack, false);
+          // setWhoMoved('another');
+        }
+        if (themUser) {
+          themUsers = themUser;
+          setTimeout(() => {
+            detectMotion(remoteVideoTrack, false);
+            setWhoMoved('another');
+          }, 2000); // Start detectMotion after 2 seconds
         }
         if (mediaType === 'audio') {
           onAudioConnect(themUser.audioTrack);
@@ -181,8 +187,13 @@ export default function Home() {
       (track) => track.trackMediaType === 'video'
     ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
-    detectMotion(cameraTrack, true);
-    setWhoMoved('you');
+    if (themUsers) {
+      setTimeout(() => {
+        detectMotion(cameraTrack, true);
+        setWhoMoved('you');
+      }, 2000); // Start detectMotion after 2 seconds
+    }
+
     await client.publish(tracks);
 
     return { tracks, client };
@@ -212,30 +223,26 @@ export default function Home() {
   }
 
   function getImage() {
-    console.log("getting image");
-    const videoConrainerId = document.getElementById(
-      "video-container-1"
-    );
-    const videoConrainerId2 = document.getElementById(
-      "video-container-2"
-    );
-    if(videoConrainerId && videoConrainerId2 && isSnap.current === false){
-    html2canvas(videoConrainerId, {
-      width: 400,
-      height: 320,
-    }).then((canvas) => {        
-      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
-      console.log("img logger");
-      setImageSrc(imageURL);
-    });
-    html2canvas(videoConrainerId2, {
-      width: 400,
-      height: 320,
-    }).then((canvas) => {        
-      const imageURL2 = canvas.toDataURL('image/jpeg', 1.0);
-      console.log("img logger");
-      setImageSrc2(imageURL2);
-    });
+    console.log('getting image');
+    const videoConrainerId = document.getElementById('video-container-1');
+    const videoConrainerId2 = document.getElementById('video-container-2');
+    if (videoConrainerId && videoConrainerId2 && isSnap.current === false) {
+      html2canvas(videoConrainerId, {
+        width: 400,
+        height: 320,
+      }).then((canvas) => {
+        const imageURL = canvas.toDataURL('image/jpeg', 1.0);
+        console.log('img logger');
+        setImageSrc(imageURL);
+      });
+      html2canvas(videoConrainerId2, {
+        width: 400,
+        height: 320,
+      }).then((canvas) => {
+        const imageURL2 = canvas.toDataURL('image/jpeg', 1.0);
+        console.log('img logger');
+        setImageSrc2(imageURL2);
+      });
     }
     isSnap.current = true;
   }
@@ -277,7 +284,7 @@ export default function Home() {
           isMoved.current = true;
           setIsDetected(true);
           playSound();
-          isSnap.current === false && (setInterval(getImage, 50));
+          isSnap.current === false && setInterval(getImage, 50);
         }
       }
       lastImageData = imageData;
@@ -385,24 +392,53 @@ export default function Home() {
             <button onClick={handleNextClick}>next</button>
             <div className='chat-window'>
               <div className='video-panel'>
-              <div className="video-stream" id="video-container-1">
-                    
-                    {myVideo && (
-                      <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+                <div className='video-stream' id='video-container-1'>
+                  {myVideo && (
+                    <VideoPlayer
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={myVideo}
-                      />
-                      )}
-                    {isMoved.current && whoMoved === "you" && <Image src={img} alt="Ricardo"   style={{position: "absolute", zIndex: 100, width: "100%", height: "100%"}}/>}
-              </div>
-              <div className="video-stream" id="video-container-2">
+                    />
+                  )}
+                  {isMoved.current && whoMoved === 'you' && (
+                    <Image
+                      src={img}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    />
+                  )}
+                </div>
+                <div className='video-stream' id='video-container-2'>
                   {themVideo && (
                     <VideoPlayer
-                      style={{ width: "100%", height: "100%", position: "absolute" }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
                       videoTrack={themVideo}
                     />
-                    )}
-                    {isMoved.current && whoMoved === "another" && <Image src={img} alt="Ricardo"  style={{position: "absolute", zIndex: 100, width: "100%", height: "100%"}}/>}
+                  )}
+                  {isMoved.current && whoMoved === 'another' && (
+                    <Image
+                      src={img}
+                      alt='Ricardo'
+                      style={{
+                        position: 'absolute',
+                        zIndex: 100,
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -422,12 +458,25 @@ export default function Home() {
                   ></input>
                   <button>submit</button>
                 </form>
+                <audio
+                  ref={audioRef}
+                  controls
+                  style={{ display: 'none' }}
+                  src='./steve-lacy-staic.mp3'
+                >
+                  Your browser does not support the
+                  <code>audio</code> element.
+                </audio>
               </div>
             </div>
           </>
         ) : (
           <div>
-            <Image src={egg} onClick={handleStartChattingClicked} className='egg-button' />
+            <Image
+              src={egg}
+              onClick={handleStartChattingClicked}
+              className='egg-button'
+            />
           </div>
         )}
       </main>
