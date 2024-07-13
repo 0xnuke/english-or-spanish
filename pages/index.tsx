@@ -171,9 +171,9 @@ export default function Home() {
           if (themUser) {
             themUsers = themUser;
             setTimeout(() => {
-              detectMotion(remoteVideoTrack, false, 'another');
+              detectMotion(remoteVideoTrack, false);
               setWhoMoved('another');
-            }, 2000); // Start detectMotion after 2 seconds
+            }, 10); // Start detectMotion after 2 seconds
           }
         }
         if (mediaType === 'audio') {
@@ -188,11 +188,11 @@ export default function Home() {
       (track) => track.trackMediaType === 'video'
     ) as IExtendedCameraVideoTrack;
     onWebcamStart(cameraTrack);
-    if (themUsers && whoMoved !== 'another') {
+    if (themUsers) {
       setTimeout(() => {
-        detectMotion(cameraTrack, true, 'you');
+        detectMotion(cameraTrack, true);
         setWhoMoved('you');
-      }, 2000); // Start detectMotion after 2 seconds
+      }, 10); // Start detectMotion after 2 seconds
     }
 
     await client.publish(tracks);
@@ -223,33 +223,27 @@ export default function Home() {
     setInput('');
   }
 
-  function getImage(user: string) {
-    console.log('getting image', whoMoved);
-    let videoConrainerId;
-    if (user === 'you') {
-      console.log('you logger', whoMoved);
-      videoConrainerId = document.getElementById('video-container-you');
-    } else if (user === 'another') {
-      videoConrainerId = document.getElementById('video-container-another');
-    }
-
-    if (videoConrainerId && isSnap.current === false) {
-      html2canvas(videoConrainerId, {
-        width: 400,
-        height: 320,
-      }).then((canvas) => {
-        const imageURL = canvas.toDataURL('image/jpeg', 1.0);
-        console.log('img logger');
-        setImageSrc(imageURL);
-      });
+  function getImage() {
+    console.log("getting image");
+    const videoConrainerId = document.getElementById(
+      "video-container-1"
+    );
+    if(videoConrainerId && isSnap.current === false){
+    html2canvas(videoConrainerId, {
+      width: 400,
+      height: 320,
+    }).then((canvas) => {        
+      const imageURL = canvas.toDataURL('image/jpeg', 1.0);
+      console.log("img logger");
+      setImageSrc(imageURL);
+    });
     }
     isSnap.current = true;
   }
 
   function detectMotion(
     videoTrack: IExtendedRemoteVideoTrack | IExtendedCameraVideoTrack,
-    isLocal: boolean,
-    user: string
+    isLocal: boolean
   ) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -283,7 +277,7 @@ export default function Home() {
           // Motion threshold
           isMoved.current = true;
           setIsDetected(true);
-          isSnap.current === false && setInterval(getImage, 50, user);
+          isSnap.current === false && (setInterval(getImage, 50));
           // playSound();
         }
       }
@@ -389,13 +383,11 @@ export default function Home() {
         {isChatting ? (
           <>
             {room._id}
-            {imageSrc && (
-              <img src={imageSrc} style={{ width: '100%', height: 'auto' }} />
-            )}
+            {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "auto"}}/>}
             <button onClick={handleNextClick}>next</button>
             <div className='chat-window'>
               <div className='video-panel'>
-                <div className='video-stream' id='video-container-you'>
+                <div className='video-stream' id='video-container-1'>
                   {myVideo && (
                     <VideoPlayer
                       style={{
@@ -421,7 +413,7 @@ export default function Home() {
                     />
                   )}
                 </div>
-                <div className='video-stream' id='video-container-another'>
+                <div className='video-stream'>
                   {themVideo && (
                     <VideoPlayer
                       style={{
