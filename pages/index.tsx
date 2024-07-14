@@ -13,6 +13,17 @@ import Image from 'next/image';
 import img from '../public/bg-1.png';
 import html2canvas from 'html2canvas';
 import egg from '../public/egg.png';
+import DialogMint from '../components/DialogMint';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Button from '@mui/material/Button';
+import { TransitionProps } from '@mui/material/transitions';
+import Slide from '@mui/material/Slide';
+
+
 
 type TCreateRoomResponse = {
   room: Room;
@@ -43,6 +54,15 @@ interface IExtendedRemoteVideoTrack extends IRemoteVideoTrack {
 interface IExtendedCameraVideoTrack extends ICameraVideoTrack {
   getElement?: () => HTMLVideoElement; // Ensure it returns HTMLVideoElement
 }
+
+const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & {
+    children: React.ReactElement<any, any>;
+  },
+  ref: React.Ref<unknown>,
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 function createRoom(userId: string): Promise<TCreateRoomResponse> {
   return fetch(`/api/rooms?userId=${userId}`, {
@@ -131,11 +151,20 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [imageSrc, setImageSrc] = useState('');
   const [imageSrc2, setImageSrc2] = useState('');
-
+  const [open, setOpen] = React.useState(false);
   const isMoved = useRef(false);
   const isSnap = useRef(false);
   const channelRef = useRef<RtmChannel>();
   const rtcClientRef = useRef<IAgoraRTCClient>();
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setWhoMoved("")
+  };
 
   async function connectToAgoraRtc(
     roomId: string,
@@ -177,7 +206,7 @@ export default function Home() {
           setTimeout(() => {
             detectMotion(remoteVideoTrack, false);
             setWhoMoved('another');
-          }, 2000); // Start detectMotion after 2 seconds
+          }, 500); // Start detectMotion after 2 seconds
         }
         if (mediaType === 'audio') {
           onAudioConnect(themUser.audioTrack);
@@ -196,7 +225,7 @@ export default function Home() {
       setTimeout(() => {
         detectMotion(cameraTrack, true);
         setWhoMoved('you');
-      }, 2000); // Start detectMotion after 2 seconds
+      }, 500); // Start detectMotion after 2 seconds
     }
 
     await client.publish(tracks);
@@ -229,27 +258,36 @@ export default function Home() {
 
   function getImage() {
     console.log('getting image');
-    const videoConrainerId = document.getElementById('video-container-1');
-    const videoConrainerId2 = document.getElementById('video-container-2');
-    if (videoConrainerId && videoConrainerId2 && isSnap.current === false) {
-      html2canvas(videoConrainerId, {
+    const videoContainerId1 = document.getElementById('video-container-1');
+    const videoContainerId2 = document.getElementById('video-container-2');
+
+    if (videoContainerId1 && videoContainerId2 && isSnap.current === false) {
+      html2canvas(videoContainerId1, {
         width: 400,
         height: 320,
       }).then((canvas) => {
-        const imageURL = canvas.toDataURL('image/jpeg', 1.0);
-        console.log('img logger');
-        setImageSrc(imageURL);
+        const imageURL1 = canvas.toDataURL('image/jpeg', 1.0);
+        console.log('Image from video container 1 captured');
+        setImageSrc(imageURL1);
+      }).catch((err) => {
+        console.error('Error capturing image from video container 1:', err);
       });
-      html2canvas(videoConrainerId2, {
+
+      html2canvas(videoContainerId2, {
         width: 400,
         height: 320,
       }).then((canvas) => {
         const imageURL2 = canvas.toDataURL('image/jpeg', 1.0);
-        console.log('img logger');
+        console.log('Image from video container 2 captured');
         setImageSrc2(imageURL2);
+      }).catch((err) => {
+        console.error('Error capturing image from video container 2:', err);
       });
+
+      isSnap.current = true;
+    } else {
+      console.log('One or both video containers not found, or snapshot already taken');
     }
-    isSnap.current = true;
   }
 
   function detectMotion(
@@ -289,7 +327,7 @@ export default function Home() {
           isMoved.current = true;
           setIsDetected(true);
           playSound();
-          isSnap.current === false && setInterval(getImage, 50);
+          isSnap.current === false && getImage()
         }
       }
       lastImageData = imageData;
@@ -392,8 +430,6 @@ export default function Home() {
         {isChatting ? (
           <>
             {room._id}
-            {/* {imageSrc && <img src={imageSrc} style={{ width: "100%", height: "100%"}}/>}
-            {imageSrc2 && <img src={imageSrc2} style={{ width: "100%", height: "100%"}}/>} */}
             <div>
               <Image
                 src={egg}
@@ -480,6 +516,75 @@ export default function Home() {
                 </audio>
               </div>
             </div>
+            {imageSrc && isMoved.current && whoMoved === 'you' && (
+              <Dialog
+                open={whoMoved && true}
+                TransitionComponent={Transition}
+                keepMounted
+                onClose={handleClose}
+                aria-describedby="alert-dialog-slide-description"
+              >
+                <DialogTitle>{"Congratulations!"}</DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-slide-description">
+                    <div className='video-stream' >
+                      <img src={imageSrc} style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }} />
+                      <Image
+                        src={img}
+                        alt='Ricardo'
+                        style={{
+                          position: 'absolute',
+                          zIndex: 100,
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      />
+                    </div>
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{display: "flex", justifyContent: "center"}}>
+                  <Button onClick={handleClose}>Mint</Button>
+                </DialogActions>
+              </Dialog>)}
+            {imageSrc2 && isMoved.current && whoMoved === 'another' && (
+              <Dialog
+                open={ whoMoved && true}
+                TransitionComponent={Transition}
+                keepMounted
+                onClose={handleClose}
+                aria-describedby="alert-dialog-slide-description"
+              >
+                <DialogTitle>{"Congratulations!"}</DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-slide-description">
+                    <div className='video-stream' >
+                      <img src={imageSrc2} style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }} />
+                      <Image
+                        src={img}
+                        alt='Ricardo'
+                        style={{
+                          position: 'absolute',
+                          zIndex: 100,
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      />
+                    </div>
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{display: "flex", justifyContent: "center"}}>
+                  <Button onClick={handleClose}>Mint</Button>
+                </DialogActions>
+              </Dialog>
+            )}
           </>
         ) : (
           <div>
